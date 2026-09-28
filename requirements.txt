@@ -1,0 +1,8 @@
+# Dependencias para correr localmente los scripts de recolección y de figuras.
+# Los notebooks instalan sus propias dependencias al inicio (Google Colab).
+google-api-python-client>=2.100
+python-dotenv>=1.0
+pandas>=2.0,<3
+matplotlib>=3.8
+pillow>=10.0
+huggingface_hub>=0.25,<2.0
