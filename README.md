@@ -47,8 +47,10 @@ Los datos y los modelos están en Hugging Face Hub, en la cuenta
 bajo solicitud:
 
 - **`emotion-futbol-data`**: 72.000 comentarios de entrenamiento, 18.000 de validación, la prueba de 10.000
-  comentarios, los resultados y predicciones de los 17 modelos, los resultados del prototipo
-  (`prototipo/<caso>/`) y los de la comparación con DeepSeek (`final/comercial/`).
+  comentarios, los resultados de los modelos con la tabla comparativa y las gráficas (`final/`), las
+  predicciones y matrices de confusión de los modelos de lenguaje, los resultados de los dos casos de estudio
+  (`prototipo/mundial2026_prueba/` y `prototipo/en_vivo_prueba/`) y los de la comparación con DeepSeek
+  (`final/comercial/`).
 - **`emotion-futbol-checkpoints`**: los adaptadores LoRA de los modelos de lenguaje, entre ellos el de
   EmoGol-2B (`gemma2_2b/adapter_final`), y los modelos ajustados de RoBERTuito y BETO. Cada adaptador se
   combina con el modelo base público correspondiente.
@@ -74,7 +76,7 @@ usan una GPU Tesla T4; el 18 corre en CPU.
 | 12 | `12_Modelos_Clasicos.ipynb` | SVM, árbol, Random Forest, CNN, BiLSTM y GNN | `08_Clasicos_Split_Oficial` |
 | 13 | `13_BERT_RoBERTuito.ipynb` | RoBERTuito con LoRA | `09_BERT_Family_Split_Oficial` |
 | 14 | `14_BERT_BETO.ipynb` | BETO con LoRA (mismo notebook que el 13) | `09_BERT_Family_Split_Oficial` |
-| 15 | `15_Tabla_Maestra_Graficas.ipynb` | Tabla maestra de los 17 modelos y gráficas | `11_Consolidacion_Graficas` |
+| 15 | `15_Tabla_Maestra_Graficas.ipynb` | Tabla maestra de los modelos y gráficas (incluye Qwen2.5 7B; ver notas) | `11_Consolidacion_Graficas` |
 | 16 | `16_Prototipo_EmoGol.ipynb` | Prototipo EmoGol sobre un video de YouTube (final de la Copa del Mundo 2026) | `10_Clasificador_Comentarios_Video` |
 | 17 | `17_EmoGol_Chat_En_Vivo.ipynb` | Captura y clasificación del chat en vivo de una transmisión (final del Mundial Femenino Sub-20 2026) | `10b_EmoGol_Chat_En_Vivo` |
 | 18 | `18_Comparacion_Modelo_Comercial.ipynb` | Comparación con DeepSeek-V4.1-Flash sin ajuste fino (zero-shot, con guía y con ejemplos) sobre la misma prueba | `18_Comparacion_Modelo_Comercial` |
@@ -103,7 +105,11 @@ Las claves se leen desde los secretos de Colab y nunca se escriben en el código
 - **Una ejecución por modelo.** Los notebooks 07, 08, 09 y 10 se corren una vez por modelo cambiando
   `CLAVE_MODELO`; aquí se incluye una ejecución de ejemplo de cada uno.
 - **Resultados de los modelos de lenguaje.** La eficiencia (latencia, memoria, tamaño) viene del 09 y las
-  métricas de calidad oficiales del 10. El 15 consolida los resultados de los 17 modelos.
+  métricas de calidad oficiales del 10. El 15 consolida los resultados de todos los modelos entrenados.
+- **Qwen2.5 7B.** Se entrenó y evaluó con la misma receta (sus archivos están en Hugging Face con la clave
+  `qwen_7b` y aparece en la tabla maestra del notebook 15), pero la monografía lo excluye de la comparación
+  final de 17 modelos, porque Qwen2.5-7B-Instruct es el modelo anotador del conjunto de datos y un mismo
+  modelo no debe generar las etiquetas y ser evaluado con ellas.
 - **Chat en vivo (17).** Necesita una transmisión con el chat activo. Guarda solo el texto, la hora y el
   identificador de cada mensaje, sin el nombre del autor. Las salidas del notebook corresponden a la
   ejecución reportada en la monografía.
