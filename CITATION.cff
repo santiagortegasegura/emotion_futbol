@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "Si usa este software, cítelo como se indica a continuación."
+type: software
+title: "EmoGol: clasificación de emociones en comentarios de fútbol en español con modelos de lenguaje pequeños"
+version: v1
+doi: 10.5281/zenodo.23547984
+date-released: 2026-10-21
+license: MIT
+repository-code: "https://github.com/santiagortegasegura/emotion_futbol"
+authors:
+  - family-names: "Ortega Segura"
+    given-names: "Santiago Fernando"
+    affiliation: "Universidad del Cauca"
+keywords:
+  - emotion classification
+  - small language models
+  - QLoRA
+  - Spanish
+  - football
