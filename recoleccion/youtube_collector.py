@@ -1,199 +1,113 @@
-import os
-import json
-import re
+"""Recolecta comentarios de videos de YouTube con la YouTube Data API v3.
 
+Uso:
+    python recoleccion/youtube_collector.py VIDEO_ID [VIDEO_ID ...]
+    python recoleccion/youtube_collector.py --lista videos.txt --max 1000 --evento final_mundial
+
+La clave se lee de la variable YOUTUBE_API_KEY (archivo .env en la raíz del repositorio).
+Por cada video se guardan hasta --max comentarios de primer nivel con al menos 10 caracteres
+y que no sean solo signos. El resultado es un archivo JSON en datasets/ con los campos que
+lee el notebook 01. El campo author no pasa a los conjuntos publicados.
+"""
+import argparse
+import json
+import os
+import re
 from datetime import datetime
 
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 
-# ============================================
-# LOAD ENV VARIABLES
-# ============================================
 
-load_dotenv()
-
-api_key = os.getenv("YOUTUBE_API_KEY")
-
-# ============================================
-# CREATE YOUTUBE CLIENT
-# ============================================
-
-youtube = build(
-    "youtube",
-    "v3",
-    developerKey=api_key
-)
-
-# ============================================
-# VIDEO CONFIGURATION
-# ============================================
-
-video_id = "g75avihz7m0"
-
-event_name = "youtube_match_event"
-
-max_comments = 1000
-
-# ============================================
-# TIMESTAMP
-# ============================================
-
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# ============================================
-# FILTER FUNCTION
-# ============================================
-
-def is_valid_comment(text):
-
-    text = text.strip()
-
-    if len(text) < 10:
+def es_comentario_valido(texto):
+    texto = texto.strip()
+    if len(texto) < 10:
         return False
-
-    if re.fullmatch(r'[^\w\s]+', text):
+    if re.fullmatch(r"[^\w\s]+", texto):
         return False
-
     return True
 
-# ============================================
-# START COLLECTION
-# ============================================
 
-print("\n===================================")
-print("STARTING YOUTUBE COLLECTION")
-print("===================================")
+def recolectar_video(youtube, video_id, evento, max_comentarios):
+    datos = []
+    vistos = set()
+    pagina = None
 
-data = []
+    while len(datos) < max_comentarios:
+        respuesta = youtube.commentThreads().list(
+            part="snippet",
+            videoId=video_id,
+            maxResults=100,
+            pageToken=pagina,
+            textFormat="plainText",
+        ).execute()
 
-seen_comment_ids = set()
+        for item in respuesta["items"]:
+            comment_id = item["id"]
+            if comment_id in vistos:
+                continue
+            vistos.add(comment_id)
 
-next_page_token = None
+            comentario = item["snippet"]["topLevelComment"]["snippet"]
+            texto = comentario["textDisplay"].strip()
+            if not es_comentario_valido(texto):
+                continue
 
-# ============================================
-# PAGINATION LOOP
-# ============================================
+            datos.append({
+                "comment_id": comment_id,
+                "source": "youtube",
+                "event": evento,
+                "video_id": video_id,
+                "author": comentario["authorDisplayName"],
+                "created_at": comentario["publishedAt"],
+                "likes": comentario["likeCount"],
+                "reply_count": item["snippet"]["totalReplyCount"],
+                "text": texto,
+            })
+            if len(datos) >= max_comentarios:
+                break
 
-while len(data) < max_comments:
-
-    response = youtube.commentThreads().list(
-        part="snippet",
-        videoId=video_id,
-        maxResults=100,
-        pageToken=next_page_token,
-        textFormat="plainText"
-    ).execute()
-
-    for item in response["items"]:
-
-        # ============================================
-        # UNIQUE COMMENT ID
-        # ============================================
-
-        comment_id = item["id"]
-
-        # Skip duplicates
-        if comment_id in seen_comment_ids:
-            continue
-
-        seen_comment_ids.add(comment_id)
-
-        # ============================================
-        # COMMENT DATA
-        # ============================================
-
-        comment = item["snippet"]["topLevelComment"]["snippet"]
-
-        text = comment["textDisplay"].strip()
-
-        # ============================================
-        # FILTER BAD COMMENTS
-        # ============================================
-
-        if not is_valid_comment(text):
-            continue
-
-        created_at = comment["publishedAt"]
-
-        author = comment["authorDisplayName"]
-
-        likes = comment["likeCount"]
-
-        reply_count = item["snippet"]["totalReplyCount"]
-
-        # ============================================
-        # SHOW COMMENTS
-        # ============================================
-
-        print("\n----------------------------")
-        print(f"AUTHOR: {author}")
-        print(f"DATE: {created_at}")
-        print(f"LIKES: {likes}")
-        print(f"COMMENT:\n{text}")
-
-        # ============================================
-        # SAVE DATA
-        # ============================================
-
-        data.append({
-            "comment_id": comment_id,
-            "source": "youtube",
-            "event": event_name,
-            "video_id": video_id,
-            "author": author,
-            "created_at": created_at,
-            "likes": likes,
-            "reply_count": reply_count,
-            "text": text
-        })
-
-        if len(data) >= max_comments:
+        pagina = respuesta.get("nextPageToken")
+        if not pagina:
             break
 
-    # ============================================
-    # NEXT PAGE
-    # ============================================
+    return datos
 
-    next_page_token = response.get("nextPageToken")
 
-    if not next_page_token:
-        break
+def main():
+    parser = argparse.ArgumentParser(description="Recolecta comentarios de videos de YouTube.")
+    parser.add_argument("videos", nargs="*", help="IDs de los videos")
+    parser.add_argument("--lista", help="archivo de texto con un ID de video por línea")
+    parser.add_argument("--evento", default="youtube_match_event", help="nombre del evento")
+    parser.add_argument("--max", type=int, default=1000, help="máximo de comentarios por video")
+    parser.add_argument("--salida", default="datasets", help="carpeta de salida")
+    args = parser.parse_args()
 
-# ============================================
-# CREATE DATASETS DIRECTORY
-# ============================================
+    videos = list(args.videos)
+    if args.lista:
+        with open(args.lista, encoding="utf-8") as f:
+            videos += [linea.strip() for linea in f if linea.strip() and not linea.startswith("#")]
+    if not videos:
+        parser.error("indique al menos un ID de video o un archivo con --lista")
 
-os.makedirs("datasets", exist_ok=True)
+    load_dotenv()
+    youtube = build("youtube", "v3", developerKey=os.getenv("YOUTUBE_API_KEY"))
 
-# ============================================
-# JSON FILE PATH
-# ============================================
+    datos = []
+    for video_id in videos:
+        comentarios = recolectar_video(youtube, video_id, args.evento, args.max)
+        print(f"{video_id}: {len(comentarios)} comentarios")
+        datos += comentarios
 
-json_path = f"datasets/{event_name}_{timestamp}.json"
+    os.makedirs(args.salida, exist_ok=True)
+    marca = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ruta = os.path.join(args.salida, f"{args.evento}_{marca}.json")
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump(datos, f, ensure_ascii=False, indent=4)
 
-# ============================================
-# EXPORT JSON
-# ============================================
+    print(f"\nTotal: {len(datos)} comentarios de {len(videos)} videos")
+    print(f"Guardado en: {ruta}")
 
-with open(json_path, "w", encoding="utf-8") as json_file:
 
-    json.dump(
-        data,
-        json_file,
-        ensure_ascii=False,
-        indent=4
-    )
-
-# ============================================
-# FINAL RESULTS
-# ============================================
-
-print("\n===================================")
-print("DATASET CREATED SUCCESSFULLY")
-print("===================================")
-
-print(f"\nTotal unique comments collected: {len(data)}")
-
-print(f"\nJSON saved at:")
-print(json_path)
+if __name__ == "__main__":
+    main()

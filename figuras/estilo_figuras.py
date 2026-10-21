@@ -1,7 +1,7 @@
 """Estilo común para las figuras del Capítulo 3 de EmoGol (Figuras 3.1, 3.2, 3.3 y 3.5).
 
 Todas las figuras se dibujan al ancho real de la página (6,5 in ≈ 16,5 cm) para que el texto se lea
-en el documento sin reescalar. Los títulos NO van dentro de la imagen: la leyenda se pone en Word.
+en el documento sin reescalar. Los títulos no van dentro de la imagen: la leyenda se pone en el documento (LaTeX).
 """
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Ellipse, FancyArrowPatch

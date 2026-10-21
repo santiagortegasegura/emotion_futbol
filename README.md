@@ -30,6 +30,12 @@ Sobre una prueba de 10.000 comentarios que no participó en el entrenamiento:
 
 El análisis completo está en la monografía.
 
+## Uso rápido
+
+Para clasificar comentarios con EmoGol-2B, la tarjeta del repositorio
+[`emotion-futbol-checkpoints`](https://huggingface.co/datasets/santiagortegasegura/emotion-futbol-checkpoints)
+tiene un ejemplo de pocas líneas. Para analizar todos los comentarios de un video de YouTube, usa el notebook 16.
+
 ## Estructura del repositorio
 
 | Carpeta | Contenido |
@@ -43,8 +49,8 @@ El análisis completo está en la monografía.
 ## Datos y modelos
 
 Los datos y los modelos están en Hugging Face Hub, en la cuenta
-[santiagortegasegura](https://huggingface.co/santiagortegasegura), y están disponibles con fines académicos
-bajo solicitud:
+[santiagortegasegura](https://huggingface.co/santiagortegasegura), y son de acceso público con fines
+académicos:
 
 - **`emotion-futbol-data`**: 72.000 comentarios de entrenamiento, 18.000 de validación, la prueba de 10.000
   comentarios, los resultados de los modelos con la tabla comparativa y las gráficas (`final/`), las
@@ -57,8 +63,9 @@ bajo solicitud:
 
 ## Notebooks
 
-En orden de ejecución. Todos corren en Google Colab y leen sus datos de Hugging Face. Los notebooks 01 a 17
-usan una GPU Tesla T4; el 18 corre en CPU.
+En orden de ejecución. Todos corren en Google Colab. Los notebooks 03, 07 a 10, 12 a 14, 16 y 17 usan una GPU
+Tesla T4; los demás corren en CPU. Los notebooks 01 a 05 leen el conjunto crudo desde Google Drive (ver notas);
+desde el 06, todos los datos se leen de Hugging Face.
 
 | Nº | Notebook | Qué hace | Nombre durante el desarrollo |
 |---|---|---|---|
@@ -91,14 +98,24 @@ Las claves se leen desde los secretos de Colab y nunca se escriben en el código
 | `YOUTUBE_API_KEY` | 16 y 17 |
 | `DEEPSEEK_API_KEY` | 18 |
 
+Para correr localmente el script de recolección, crea un archivo `.env` en la raíz con `YOUTUBE_API_KEY=...`
+(el archivo está excluido en `.gitignore`).
+
 ## Notas
 
+- **Datos crudos.** Los notebooks 01 a 05 leen el conjunto crudo desde Google Drive (`RUTA/A` es la carpeta que
+  se debe reemplazar por la propia). El conjunto crudo no se publica porque incluye los nombres de usuario de
+  YouTube; los archivos publicados en Hugging Face no incluyen nombres de usuario.
+- **Reproducción.** Para volver a entrenar o evaluar, cambia `TU_USUARIO_HF` por tu propia cuenta de Hugging Face,
+  de modo que los resultados se guarden en tus repositorios.
 - **Numeración.** Los notebooks se renumeraron en orden de ejecución para su publicación. Las salidas
   conservan los mensajes originales, así que en algunas aparece el nombre que tenían durante el desarrollo
   (columna de la derecha). Por la misma razón, los archivos de resultados en Hugging Face conservan sus
   prefijos originales: `07_resultados_finales.csv` (notebooks 09 y 10), `08_resultados_clasicos.csv`
   (notebook 12) y `09_resultados_bert_family.csv` (notebooks 13 y 14). Los archivos de datos
   `04b_entrenamiento_72k.csv` y `04b_validacion_interna_18k.csv` los genera el notebook 04.
+- **Mensajes.** Para la publicación se ajustó la redacción de algunos mensajes informativos de los notebooks
+  (en el código y en las salidas guardadas). El código y los resultados no cambiaron.
 - **Varias sesiones.** El etiquetado del pool (03) y los entrenamientos (07 y 08) se pueden retomar desde el
   último punto guardado, así que se hicieron en varias sesiones de Colab. De los entrenamientos se incluye
   la sesión en la que terminó un modelo por notebook.
@@ -115,4 +132,23 @@ Las claves se leen desde los secretos de Colab y nunca se escriben en el código
   ejecución reportada en la monografía.
 - **Comparación comercial (18).** Usa la API de pago de DeepSeek y guarda el avance en Google Drive para
   poder retomarlo; los tres modos costaron cerca de 1 USD en total (octubre de 2026). Las respuestas de un
-  modelo comercial pueden variar entre ejecuciones aunque se use temperatura 0.
+  modelo comercial pueden variar entre ejecuciones aunque se use temperatura 0. Se publica sin salidas; los
+  resultados están en la tabla final del notebook y en `final/comercial/` de Hugging Face.
+
+## Cómo citar
+
+```bibtex
+@thesis{ortega2026emogol,
+  author  = {Ortega Segura, Santiago Fernando},
+  title   = {Inteligencia emocional en eventos futbol{\'i}sticos basada en lenguaje natural},
+  school  = {Universidad del Cauca},
+  address = {Popay{\'a}n, Colombia},
+  type    = {Trabajo de grado},
+  year    = {2026}
+}
+```
+
+## Licencia
+
+El código se publica bajo la licencia MIT (archivo `LICENSE`). Los datos y los adaptadores tienen sus propios
+términos de uso, descritos en las tarjetas de sus repositorios en Hugging Face.
