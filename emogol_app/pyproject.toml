@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "emogol"
-version = "1.0.0"
+version = "1.1.0"
 description = "EmoGol: clasificación de emociones en comentarios de fútbol en español"
 requires-python = ">=3.10"
 dependencies = ["joblib>=1.3", "pandas>=2.0,<3"]
@@ -12,7 +12,7 @@ dependencies = ["joblib>=1.3", "pandas>=2.0,<3"]
 [project.optional-dependencies]
 modelo = ["torch>=2.2", "transformers>=4.44", "peft>=0.12", "bitsandbytes>=0.43", "accelerate>=0.33", "huggingface_hub>=0.24,<2.0"]
 ingesta = ["google-api-python-client>=2.100"]
-servicio = ["fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27"]
+servicio = ["fastapi>=0.110", "uvicorn>=0.29", "httpx>=0.27", "redis>=5.0", "prometheus_client>=0.20", "psutil>=5.9", "nvidia-ml-py>=12.535"]
 tablero = ["streamlit>=1.35", "matplotlib>=3.8", "httpx>=0.27"]
 
 [tool.setuptools]

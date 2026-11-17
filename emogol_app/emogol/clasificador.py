@@ -40,7 +40,7 @@ class EmoGolClasificador:
 
     def __getstate__(self):
         estado = self.__dict__.copy()
-        for clave in ("_modelo", "_tokenizer", "_tokens_comentario", "_dir_adaptador"):
+        for clave in ("_modelo", "_tokenizer", "_tokens_comentario", "_dir_adaptador", "_bits"):
             estado[clave] = None
         return estado
 
@@ -60,10 +60,16 @@ class EmoGolClasificador:
     def cargado(self) -> bool:
         return self._modelo is not None
 
-    def cargar(self, token_hf: str | None = None):
-        """Carga Gemma-2 2B en 4 bits (NF4) y le aplica el adaptador guardado en el .joblib."""
+    def cargar(self, token_hf: str | None = None, bits: int = 4):
+        """Carga Gemma-2 2B y le aplica el adaptador guardado en el .joblib.
+
+        bits=4 es la configuración evaluada (NF4, como en el entrenamiento con QLoRA).
+        bits=8 (LLM.int8) y bits=16 (float16) solo se usan para comparar el efecto de la cuantización.
+        """
         if self.cargado:
             return self
+        if bits not in (4, 8, 16):
+            raise ValueError("bits debe ser 4, 8 o 16")
         import torch
         from peft import PeftModel
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
@@ -75,25 +81,33 @@ class EmoGolClasificador:
             destino.parent.mkdir(parents=True, exist_ok=True)
             destino.write_bytes(contenido)
 
-        bnb = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
-            bnb_4bit_use_double_quant=True,
-        )
+        if bits == 4:
+            cuantizacion = {"quantization_config": BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+                bnb_4bit_use_double_quant=True,
+            )}
+        elif bits == 8:
+            cuantizacion = {"quantization_config": BitsAndBytesConfig(load_in_8bit=True)}
+        else:
+            import transformers
+            clave = "dtype" if int(transformers.__version__.split(".")[0]) >= 5 else "torch_dtype"
+            cuantizacion = {clave: torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16}
         tokenizer = AutoTokenizer.from_pretrained(self.config.modelo_base, token=token_hf)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "left"
 
         base = AutoModelForCausalLM.from_pretrained(
-            self.config.modelo_base, quantization_config=bnb, device_map="auto",
+            self.config.modelo_base, **cuantizacion, device_map="auto",
             attn_implementation="eager", token=token_hf)
         modelo = PeftModel.from_pretrained(base, self._dir_adaptador)
         modelo.eval()
 
         self._tokenizer = tokenizer
         self._modelo = modelo
+        self._bits = bits
         self._tokens_comentario = self.config.max_length - len(tokenizer(self.prompt("")).input_ids) - 2
         return self
 
@@ -160,6 +174,7 @@ class EmoGolClasificador:
             "tamano_adaptador_mib": round(tam / 2**20, 1),
             "huella_adaptador": huella(self.archivos_adaptador),
             "cargado": self.cargado,
+            "bits": getattr(self, "_bits", None),
             **self.metadatos,
         }
 

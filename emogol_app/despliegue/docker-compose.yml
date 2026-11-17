@@ -1,0 +1,50 @@
+# Despliegue completo de EmoGol en una máquina con GPU NVIDIA (cualquier proveedor de nube o equipo propio).
+# Requiere Docker, Docker Compose y NVIDIA Container Toolkit.
+#   cp ../.env.example ../.env   # completar HF_TOKEN y YOUTUBE_API_KEY
+#   docker compose up -d
+# Servicios: API en :8000, tablero en :8501, Prometheus en :9090, Grafana en :3000.
+services:
+  emogol:
+    build: ..
+    env_file: ../.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports: ["8000:8000"]
+    depends_on: [redis]
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    restart: unless-stopped
+
+  tablero:
+    build: ..
+    command: ["streamlit", "run", "tablero/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    environment:
+      EMOGOL_API: http://emogol:8000
+    ports: ["8501:8501"]
+    depends_on: [emogol]
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
