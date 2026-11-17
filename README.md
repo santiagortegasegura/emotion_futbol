@@ -6,7 +6,8 @@ Código del trabajo de grado **"Inteligencia emocional en eventos futbolísticos
 **Autor:** Santiago Fernando Ortega Segura · **Director:** Ph.D. Oscar Mauricio Caicedo Rendón
 
 EmoGol clasifica comentarios de fútbol en español en siete emociones (alegría, tristeza, enojo, miedo,
-sorpresa, burla y neutral) y resume la reacción de la afición frente a un partido. Su modelo, **EmoGol-2B**,
+sorpresa, desprecio y neutral) y resume la reacción de la afición frente a un partido. En los datos y en el
+prompt, el desprecio conserva la etiqueta `burla`. Su modelo, **EmoGol-2B**,
 es Gemma-2 2B ajustado con QLoRA sobre un conjunto de 100.000 comentarios de YouTube.
 
 ## Resultados principales
@@ -21,7 +22,7 @@ Sobre una prueba de 10.000 comentarios que no participó en el entrenamiento:
 | CNN (mejor modelo clásico) | 0,654 | 0,569 | 87 |
 | DeepSeek-V4.1-Flash sin ajuste fino (mejor de sus tres modos) | 0,660 | 0,558 [0,535; 0,580] | API comercial |
 
-- EmoGol-2B y Gemma-2 9B no se distinguen estadísticamente en F1 macro, pero EmoGol-2B necesita 2,7 veces
+- Entre EmoGol-2B y Gemma-2 9B no se detectó una diferencia significativa en F1 macro, pero EmoGol-2B necesita 2,7 veces
   menos memoria y cuesta 4,1 veces menos por comentario.
 - EmoGol-2B clasifica unos 14.000 comentarios por hora en una GPU Tesla T4, a menos de 4 centavos de dólar
   por cada 1.000 comentarios en la nube.
@@ -32,15 +33,27 @@ El análisis completo está en la monografía.
 
 ## Uso rápido
 
-Para clasificar comentarios con EmoGol-2B, la tarjeta del repositorio
-[`emotion-futbol-checkpoints`](https://huggingface.co/datasets/santiagortegasegura/emotion-futbol-checkpoints)
-tiene un ejemplo de pocas líneas. Para analizar todos los comentarios de un video de YouTube, usa el notebook 16.
+EmoGol-2B está disponible como un solo archivo ejecutable, `emogol.joblib`, en
+[`santiagortegasegura/emogol-2b`](https://huggingface.co/santiagortegasegura/emogol-2b):
+
+```python
+# pip install -e emogol_app
+import joblib
+from huggingface_hub import hf_hub_download
+
+emogol = joblib.load(hf_hub_download("santiagortegasegura/emogol-2b", "emogol.joblib"))
+emogol.predecir_nombres(["LO BOTO JAJAJAJA", "qué robo del árbitro"])
+```
+
+La carpeta `emogol_app/` contiene la aplicación completa: el servicio de inferencia (API), el tablero y las
+pruebas de carga. Su `README.md` explica cómo ejecutarla y desplegarla.
 
 ## Estructura del repositorio
 
 | Carpeta | Contenido |
 |---|---|
-| `notebooks/` | Los 18 notebooks del flujo final, numerados en orden de ejecución (tabla de abajo). |
+| `notebooks/` | Los 20 notebooks del flujo final, numerados en orden de ejecución (tabla de abajo). |
+| `emogol_app/` | Aplicación desplegable: `emogol.joblib`, servicio de inferencia, tablero, pruebas de carga y `Dockerfile`. |
 | `recoleccion/` | `youtube_collector.py`: extracción de comentarios de YouTube con la YouTube Data API v3. |
 | `figuras/` | Código de los diagramas de la monografía (Figuras 3.1, 3.2, 3.3 y 3.5). |
 | `herramientas/` | `verificar_secretos.py`: comprobación de los secretos de Colab antes de ejecutar. |
@@ -55,15 +68,16 @@ académicos:
 - **`emotion-futbol-data`**: 72.000 comentarios de entrenamiento, 18.000 de validación, la prueba de 10.000
   comentarios, los resultados de los modelos con la tabla comparativa y las gráficas (`final/`), las
   predicciones y matrices de confusión de los modelos de lenguaje, los resultados de los dos casos de estudio
-  (`prototipo/mundial2026_prueba/` y `prototipo/en_vivo_prueba/`) y los de la comparación con DeepSeek
-  (`final/comercial/`).
+  (`prototipo/mundial2026_prueba/` y `prototipo/en_vivo_prueba/`), los de las pruebas de carga
+  (`prototipo/pruebas_carga/`) y los de la comparación con DeepSeek (`final/comercial/`).
+- **`emogol-2b`** (modelo): `emogol.joblib`, el archivo ejecutable de EmoGol-2B, y en `codigo/` una copia de este repositorio.
 - **`emotion-futbol-checkpoints`**: los adaptadores LoRA de los modelos de lenguaje, entre ellos el de
   EmoGol-2B (`gemma2_2b/adapter_final`), y los modelos ajustados de RoBERTuito y BETO. Cada adaptador se
   combina con el modelo base público correspondiente.
 
 ## Notebooks
 
-En orden de ejecución. Todos corren en Google Colab. Los notebooks 03, 07 a 10, 12 a 14, 16 y 17 usan una GPU
+En orden de ejecución. Todos corren en Google Colab. Los notebooks 03, 07 a 10, 12 a 14, 16, 17, 19 y 20 usan una GPU
 Tesla T4; los demás corren en CPU. Los notebooks 01 a 05 leen el conjunto crudo desde Google Drive (ver notas);
 desde el 06, todos los datos se leen de Hugging Face.
 
@@ -71,7 +85,7 @@ desde el 06, todos los datos se leen de Hugging Face.
 |---|---|---|---|
 | 01 | `01_Preparacion_Datos.ipynb` | Limpieza y deduplicación (108.742 → 107.563) y muestra para etiquetado manual | `01_Preparacion_de_Datos` |
 | 02 | `02_Refuerzo_Clase_Miedo.ipynb` | Refuerzo de la clase miedo en la muestra manual; pool de 106.923 | `01b_Enriquecimiento_Miedo` |
-| 03 | `03_Etiquetado_Automatico.ipynb` | Calibración del anotador y etiquetado del pool (3 votos, confianza ≥ 0,67) | `02_Anotacion` |
+| 03 | `03_Etiquetado_Automatico.ipynb` | Calibración del anotador y etiquetado del pool (3 votos; se conservan los de al menos 2 coincidentes) | `02_Anotacion` |
 | 04 | `04_Particion_Entrenamiento_Validacion.ipynb` | Partición estratificada: 72.000 entrenamiento y 18.000 validación | `04b_0_Preparar_Split_90k` |
 | 05 | `05_Datos_Hugging_Face.ipynb` | Subida de los datos a Hugging Face | `05_migrar_datos_a_huggingface` |
 | 06 | `06_Prueba_Final.ipynb` | Conjunto de prueba de 10.000 comentarios | `04c_Prueba_Final` |
@@ -87,6 +101,8 @@ desde el 06, todos los datos se leen de Hugging Face.
 | 16 | `16_Prototipo_EmoGol.ipynb` | Prototipo EmoGol sobre un video de YouTube (final de la Copa del Mundo 2026) | `10_Clasificador_Comentarios_Video` |
 | 17 | `17_EmoGol_Chat_En_Vivo.ipynb` | Captura y clasificación del chat en vivo de una transmisión (final del Mundial Femenino Sub-20 2026) | `10b_EmoGol_Chat_En_Vivo` |
 | 18 | `18_Comparacion_Modelo_Comercial.ipynb` | Comparación con DeepSeek-V4.1-Flash sin ajuste fino (zero-shot, con guía y con ejemplos) sobre la misma prueba | `18_Comparacion_Modelo_Comercial` |
+| 19 | `19_Exportar_Joblib.ipynb` | Exporta EmoGol-2B como `emogol.joblib`, verifica que reproduce la evaluación y lo publica en `emogol-2b` | Nuevo |
+| 20 | `20_Pruebas_Carga.ipynb` | Pruebas de carga del servicio con `emogol.joblib`: tasas crecientes hasta la saturación | Nuevo |
 
 ### Secretos de Colab
 
@@ -94,7 +110,7 @@ Las claves se leen desde los secretos de Colab y nunca se escriben en el código
 
 | Secreto | Notebooks |
 |---|---|
-| `HF_TOKEN` | Todos |
+| `HF_TOKEN` | Todos (en el 19, con permiso de escritura) |
 | `YOUTUBE_API_KEY` | 16 y 17 |
 | `DEEPSEEK_API_KEY` | 18 |
 
