@@ -52,7 +52,7 @@ pruebas de carga. Su `README.md` explica cómo ejecutarla y desplegarla.
 
 | Carpeta | Contenido |
 |---|---|
-| `notebooks/` | Los 20 notebooks del flujo final, numerados en orden de ejecución (tabla de abajo). |
+| `notebooks/` | Los 22 notebooks del flujo final, numerados en orden de ejecución (tabla de abajo). |
 | `emogol_app/` | Aplicación desplegable: `emogol.joblib`, servicio de inferencia, tablero, pruebas de carga y `Dockerfile`. |
 | `recoleccion/` | `youtube_collector.py`: extracción de comentarios de YouTube con la YouTube Data API v3. |
 | `figuras/` | Código de los diagramas de la monografía (Figuras 3.1, 3.2, 3.3 y 3.5). |
@@ -69,7 +69,7 @@ académicos:
   comentarios, los resultados de los modelos con la tabla comparativa y las gráficas (`final/`), las
   predicciones y matrices de confusión de los modelos de lenguaje, los resultados de los dos casos de estudio
   (`prototipo/mundial2026_prueba/` y `prototipo/en_vivo_prueba/`), los de las pruebas de carga
-  (`prototipo/pruebas_carga/`) y los de la comparación con DeepSeek (`final/comercial/`).
+  (`prototipo/pruebas_carga/`), los de la comparación de cuantización (`final/cuantizacion/`) y los de la comparación con DeepSeek (`final/comercial/`).
 - **`emogol-2b`** (modelo): `emogol.joblib`, el archivo ejecutable de EmoGol-2B, y en `codigo/` una copia de este repositorio.
 - **`emotion-futbol-checkpoints`**: los adaptadores LoRA de los modelos de lenguaje, entre ellos el de
   EmoGol-2B (`gemma2_2b/adapter_final`), y los modelos ajustados de RoBERTuito y BETO. Cada adaptador se
@@ -77,7 +77,7 @@ académicos:
 
 ## Notebooks
 
-En orden de ejecución. Todos corren en Google Colab. Los notebooks 03, 07 a 10, 12 a 14, 16, 17, 19 y 20 usan una GPU
+En orden de ejecución. Todos corren en Google Colab. Los notebooks 03, 07 a 10, 12 a 14, 16, 17 y 19 a 22 usan una GPU
 Tesla T4; los demás corren en CPU. Los notebooks 01 a 05 leen el conjunto crudo desde Google Drive (ver notas);
 desde el 06, todos los datos se leen de Hugging Face.
 
@@ -102,7 +102,9 @@ desde el 06, todos los datos se leen de Hugging Face.
 | 17 | `17_EmoGol_Chat_En_Vivo.ipynb` | Captura y clasificación del chat en vivo de una transmisión (final del Mundial Femenino Sub-20 2026) | `10b_EmoGol_Chat_En_Vivo` |
 | 18 | `18_Comparacion_Modelo_Comercial.ipynb` | Comparación con DeepSeek-V4.1-Flash sin ajuste fino (zero-shot, con guía y con ejemplos) sobre la misma prueba | `18_Comparacion_Modelo_Comercial` |
 | 19 | `19_Exportar_Joblib.ipynb` | Exporta EmoGol-2B como `emogol.joblib`, verifica que reproduce la evaluación y lo publica en `emogol-2b` | Nuevo |
-| 20 | `20_Pruebas_Carga.ipynb` | Pruebas de carga del servicio con `emogol.joblib`: tasas crecientes hasta la saturación | Nuevo |
+| 20 | `20_Pruebas_Carga.ipynb` | Pruebas de carga del servicio con `emogol.joblib`: tasas crecientes hasta la saturación, accuracy bajo carga, caché en Redis, latencia de punta a punta y monitoreo con Prometheus | Nuevo |
+| 21 | `21_Cuantizacion_4_8_16_bits.ipynb` | EmoGol-2B con el mismo adaptador sobre el modelo base en 4, 8 y 16 bits: calidad, velocidad y memoria | Nuevo |
+| 22 | `22_Tablero_y_Grafana.ipynb` | Levanta el sistema completo (servicio, Redis, Prometheus, Grafana y tablero), analiza un video desde el tablero y captura el tablero y Grafana | Nuevo |
 
 ### Secretos de Colab
 
@@ -111,7 +113,7 @@ Las claves se leen desde los secretos de Colab y nunca se escriben en el código
 | Secreto | Notebooks |
 |---|---|
 | `HF_TOKEN` | Todos (en el 19, con permiso de escritura) |
-| `YOUTUBE_API_KEY` | 16 y 17 |
+| `YOUTUBE_API_KEY` | 16, 17 y 22 |
 | `DEEPSEEK_API_KEY` | 18 |
 
 Para correr localmente el script de recolección, crea un archivo `.env` en la raíz con `YOUTUBE_API_KEY=...`
