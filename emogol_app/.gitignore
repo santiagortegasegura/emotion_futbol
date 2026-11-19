@@ -1,0 +1,8 @@
+*.joblib
+.env
+__pycache__/
+*.egg-info/
+resultados_carga*/
+
+# Volcados de Redis
+*.rdb
